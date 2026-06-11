@@ -1,7 +1,4 @@
-"""
-Module 23: Patient Health Tracker
-Module 24: Medicine Reminder System
-"""
+
 import json
 from datetime import datetime, date, timedelta
 from typing import List, Optional
@@ -28,7 +25,8 @@ health_router = APIRouter(prefix="/health-tracker", tags=["Health Tracker"])
 def _get_patient(db: Session, user: User) -> Patient:
     patient = db.query(Patient).filter(Patient.user_id == user.id).first()
     if not patient:
-        raise HTTPException(status_code=404, detail="Patient profile not found")
+        raise HTTPException(
+            status_code=404, detail="Patient profile not found")
     return patient
 
 
@@ -42,7 +40,8 @@ def add_health_record(
         patient = _get_patient(db, current_user)
         patient_id = patient.id
     else:
-        raise HTTPException(status_code=403, detail="Only patients can log health records")
+        raise HTTPException(
+            status_code=403, detail="Only patients can log health records")
 
     # Auto-set units
     unit_map = {
@@ -100,16 +99,16 @@ def health_analytics(
         if not records:
             continue
 
-        values  = [r.value for r in records]
-        latest  = values[-1]
-        avg     = sum(values) / len(values)
-        mn      = min(values)
-        mx      = max(values)
+        values = [r.value for r in records]
+        latest = values[-1]
+        avg = sum(values) / len(values)
+        mn = min(values)
+        mx = max(values)
 
         # Trend: compare last 3 vs previous 3
         trend = "STABLE"
         if len(values) >= 6:
-            recent   = sum(values[-3:]) / 3
+            recent = sum(values[-3:]) / 3
             previous = sum(values[-6:-3]) / 3
             if recent > previous * 1.02:
                 trend = "UP"
@@ -137,10 +136,10 @@ def health_chart_data(
     db: Session = Depends(get_db),
 ):
     patient = _get_patient(db, current_user)
-    since   = datetime.utcnow() - timedelta(days=days)
+    since = datetime.utcnow() - timedelta(days=days)
 
     records = db.query(HealthRecord).filter(
-        HealthRecord.patient_id  == patient.id,
+        HealthRecord.patient_id == patient.id,
         HealthRecord.metric_type == metric_type.upper(),
         HealthRecord.recorded_at >= since,
     ).order_by(HealthRecord.recorded_at.asc()).all()
@@ -169,7 +168,7 @@ def delete_health_record(
     db: Session = Depends(get_db),
 ):
     patient = _get_patient(db, current_user)
-    record  = db.query(HealthRecord).filter(
+    record = db.query(HealthRecord).filter(
         HealthRecord.id == record_id,
         HealthRecord.patient_id == patient.id,
     ).first()
@@ -211,8 +210,10 @@ def create_reminder(
     if data.start_date <= today:
         for t_str in data.reminder_times:
             h, m = map(int, t_str.split(":"))
-            scheduled = datetime.combine(today, __import__('datetime').time(h, m))
-            log = ReminderLog(reminder_id=reminder.id, scheduled_time=scheduled)
+            scheduled = datetime.combine(
+                today, __import__('datetime').time(h, m))
+            log = ReminderLog(reminder_id=reminder.id,
+                              scheduled_time=scheduled)
             db.add(log)
 
     db.commit()
@@ -227,7 +228,8 @@ def list_reminders(
     db: Session = Depends(get_db),
 ):
     patient = _get_patient(db, current_user)
-    q = db.query(MedicineReminder).filter(MedicineReminder.patient_id == patient.id)
+    q = db.query(MedicineReminder).filter(
+        MedicineReminder.patient_id == patient.id)
     if status:
         q = q.filter(MedicineReminder.status == status)
     return q.order_by(MedicineReminder.created_at.desc()).all()
@@ -239,19 +241,19 @@ def todays_reminders(
     db: Session = Depends(get_db),
 ):
     patient = _get_patient(db, current_user)
-    today   = date.today()
+    today = date.today()
     today_start = datetime.combine(today, __import__('datetime').time.min)
-    today_end   = datetime.combine(today, __import__('datetime').time.max)
+    today_end = datetime.combine(today, __import__('datetime').time.max)
 
     reminders = db.query(MedicineReminder).filter(
         MedicineReminder.patient_id == patient.id,
-        MedicineReminder.status     == ReminderStatus.ACTIVE,
+        MedicineReminder.status == ReminderStatus.ACTIVE,
     ).all()
 
     result = []
     for r in reminders:
         logs = db.query(ReminderLog).filter(
-            ReminderLog.reminder_id    == r.id,
+            ReminderLog.reminder_id == r.id,
             ReminderLog.scheduled_time >= today_start,
             ReminderLog.scheduled_time <= today_end,
         ).all()
@@ -284,7 +286,7 @@ def mark_taken(
         raise HTTPException(status_code=404, detail="Reminder log not found")
     log.is_taken = True
     log.taken_at = datetime.utcnow()
-    log.notes    = data.notes
+    log.notes = data.notes
     db.commit()
     return MessageResponse(message="Marked as taken")
 
@@ -307,7 +309,8 @@ def pause_reminder(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    r = db.query(MedicineReminder).filter(MedicineReminder.id == reminder_id).first()
+    r = db.query(MedicineReminder).filter(
+        MedicineReminder.id == reminder_id).first()
     if not r:
         raise HTTPException(status_code=404, detail="Reminder not found")
     r.status = ReminderStatus.PAUSED
@@ -322,7 +325,8 @@ def delete_reminder(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    r = db.query(MedicineReminder).filter(MedicineReminder.id == reminder_id).first()
+    r = db.query(MedicineReminder).filter(
+        MedicineReminder.id == reminder_id).first()
     if not r:
         raise HTTPException(status_code=404, detail="Reminder not found")
     r.status = ReminderStatus.CANCELLED

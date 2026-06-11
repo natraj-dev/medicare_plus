@@ -1,9 +1,4 @@
-"""
-Remaining API endpoints:
-- departments, consultations, medical_records, prescriptions,
-  lab_tests, billing, insurance, notifications, reviews,
-  emergency_contacts, schedules, ai_assistant, admin, audit_logs
-"""
+
 import json
 import uuid
 from datetime import datetime

@@ -1,11 +1,4 @@
-"""
-Module 28: Enhanced AI Health Assistant
-- Symptom-based guidance
-- Health FAQs
-- Doctor recommendations
-- Medication assistance
-- Appointment suggestions
-"""
+
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -24,7 +17,8 @@ router = APIRouter(prefix="/ai-assistant", tags=["AI Health Assistant"])
 class EnhancedChatMessage(BaseModel):
     message: str
     conversation_history: Optional[List[dict]] = []
-    context: Optional[str] = None   # "symptom" | "medication" | "appointment" | "general"
+    # "symptom" | "medication" | "appointment" | "general"
+    context: Optional[str] = None
 
 
 class EnhancedChatResponse(BaseModel):
@@ -148,7 +142,8 @@ async def enhanced_ai_chat(
     # Build patient context if available
     patient_context = ""
     if current_user.role == UserRole.PATIENT:
-        patient = db.query(Patient).filter(Patient.user_id == current_user.id).first()
+        patient = db.query(Patient).filter(
+            Patient.user_id == current_user.id).first()
         if patient:
             patient_context = f"""
 Patient Profile:
@@ -161,7 +156,8 @@ Patient Profile:
 
     if not settings.ANTHROPIC_API_KEY:
         # Intelligent fallback without API key
-        response_text = FALLBACK_RESPONSES.get(context, FALLBACK_RESPONSES["general"])
+        response_text = FALLBACK_RESPONSES.get(
+            context, FALLBACK_RESPONSES["general"])
 
         if recommended_doctors:
             response_text += f"\n\nBased on your concern, I recommend consulting a **{recommended_doctors[0]['specialization']}** specialist."
@@ -175,7 +171,8 @@ Patient Profile:
         }
         return EnhancedChatResponse(
             response=response_text,
-            suggestions=suggestions_map.get(context, suggestions_map["general"]),
+            suggestions=suggestions_map.get(
+                context, suggestions_map["general"]),
             recommended_doctors=recommended_doctors,
             context_detected=context,
         )
@@ -211,7 +208,8 @@ Health Tracker, Medicine Reminders, Telemedicine, Emergency Requests, AI Chat.
 
         messages = []
         for h in (data.conversation_history or [])[-8:]:
-            messages.append({"role": h.get("role", "user"), "content": h.get("content", "")})
+            messages.append({"role": h.get("role", "user"),
+                            "content": h.get("content", "")})
         messages.append({"role": "user", "content": data.message})
 
         response = client.messages.create(
@@ -232,16 +230,19 @@ Health Tracker, Medicine Reminders, Telemedicine, Emergency Requests, AI Chat.
 
         return EnhancedChatResponse(
             response=ai_text,
-            suggestions=suggestions_map.get(context, suggestions_map["general"]),
+            suggestions=suggestions_map.get(
+                context, suggestions_map["general"]),
             recommended_doctors=recommended_doctors,
             context_detected=context,
         )
 
     except Exception as e:
-        response_text = FALLBACK_RESPONSES.get(context, FALLBACK_RESPONSES["general"])
+        response_text = FALLBACK_RESPONSES.get(
+            context, FALLBACK_RESPONSES["general"])
         return EnhancedChatResponse(
             response=response_text,
-            suggestions=["Book appointment", "Find a doctor", "View prescriptions"],
+            suggestions=["Book appointment",
+                         "Find a doctor", "View prescriptions"],
             recommended_doctors=recommended_doctors,
             context_detected=context,
         )

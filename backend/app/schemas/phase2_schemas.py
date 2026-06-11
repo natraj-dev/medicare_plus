@@ -1,4 +1,4 @@
-"""Phase 2 Pydantic schemas — Modules 21-30"""
+
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime, date, time
@@ -81,8 +81,8 @@ class HealthRecordCreate(BaseModel):
     metric_type: str
     value:       float
     value2:      Optional[float] = None
-    unit:        Optional[str]   = None
-    notes:       Optional[str]   = None
+    unit:        Optional[str] = None
+    notes:       Optional[str] = None
     recorded_at: Optional[datetime] = None
 
 

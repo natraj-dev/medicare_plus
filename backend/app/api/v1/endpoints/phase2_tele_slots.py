@@ -1,7 +1,4 @@
-"""
-Module 21: Telemedicine Video Consultation
-Module 22: Doctor Availability & Slot Booking
-"""
+
 import uuid
 import secrets
 from datetime import datetime, date, time, timedelta

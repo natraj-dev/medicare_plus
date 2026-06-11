@@ -1,7 +1,4 @@
-"""
-File upload endpoints for medical records, lab results, and avatars.
-Files are stored locally in /uploads directory.
-"""
+
 import os
 import uuid
 import shutil
@@ -49,9 +46,11 @@ def upload_medical_record_file(
     db: Session = Depends(get_db),
 ):
     if file.content_type not in ALLOWED_TYPES:
-        raise HTTPException(status_code=400, detail=f"File type not allowed: {file.content_type}")
+        raise HTTPException(
+            status_code=400, detail=f"File type not allowed: {file.content_type}")
 
-    record = db.query(MedicalRecord).filter(MedicalRecord.id == record_id).first()
+    record = db.query(MedicalRecord).filter(
+        MedicalRecord.id == record_id).first()
     if not record:
         raise HTTPException(status_code=404, detail="Record not found")
 
@@ -69,7 +68,8 @@ def upload_lab_result_file(
     db: Session = Depends(get_db),
 ):
     if file.content_type not in ALLOWED_TYPES:
-        raise HTTPException(status_code=400, detail=f"File type not allowed: {file.content_type}")
+        raise HTTPException(
+            status_code=400, detail=f"File type not allowed: {file.content_type}")
 
     test = db.query(LabTest).filter(LabTest.id == test_id).first()
     if not test:
@@ -88,19 +88,22 @@ def upload_avatar(
     db: Session = Depends(get_db),
 ):
     if file.content_type not in {"image/jpeg", "image/png", "image/webp"}:
-        raise HTTPException(status_code=400, detail="Only JPEG/PNG/WebP images allowed")
+        raise HTTPException(
+            status_code=400, detail="Only JPEG/PNG/WebP images allowed")
 
     url = _save_file(file, "avatars")
 
     # Update patient or doctor avatar
     from app.models.user import UserRole
     if current_user.role == UserRole.PATIENT:
-        patient = db.query(Patient).filter(Patient.user_id == current_user.id).first()
+        patient = db.query(Patient).filter(
+            Patient.user_id == current_user.id).first()
         if patient:
             patient.avatar_url = url
     elif current_user.role == UserRole.DOCTOR:
         from app.models.doctor import Doctor
-        doctor = db.query(Doctor).filter(Doctor.user_id == current_user.id).first()
+        doctor = db.query(Doctor).filter(
+            Doctor.user_id == current_user.id).first()
         if doctor:
             doctor.avatar_url = url
 

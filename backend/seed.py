@@ -1,18 +1,15 @@
-"""
-Seed script – Phase 1 + Phase 2 demo data.
-Run: python seed.py
-"""
-import sys, os
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from datetime import date, time, timedelta, datetime
-from app.db.database import SessionLocal, create_tables
-from app.models.user import User, UserRole
-from app.models.patient import Patient
-from app.models.doctor import Doctor
-from app.models.all_models import Department, DoctorSchedule, DayOfWeek
-from app.models.phase2_models import Ward, WardType, HospitalBed, BedStatus
 from app.core.security import get_password_hash
+from app.models.phase2_models import Ward, WardType, HospitalBed, BedStatus
+from app.models.all_models import Department, DoctorSchedule, DayOfWeek
+from app.models.doctor import Doctor
+from app.models.patient import Patient
+from app.models.user import User, UserRole
+from app.db.database import SessionLocal, create_tables
+from datetime import date, time, timedelta, datetime
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 
 def seed():
@@ -38,12 +35,13 @@ def seed():
             ("Pediatrics",      "Child healthcare",                    "👶"),
             ("Dermatology",     "Skin care and conditions",            "🌿"),
             ("Ophthalmology",   "Eye care and vision",                 "👁️"),
-            ("General Medicine","General health and checkups",         "🏥"),
+            ("General Medicine", "General health and checkups",         "🏥"),
             ("Gynecology",      "Women's health",                      "🌸"),
         ]
         dept_map = {}
         for name, desc, icon in dept_data:
-            existing = db.query(Department).filter(Department.name == name).first()
+            existing = db.query(Department).filter(
+                Department.name == name).first()
             if not existing:
                 d = Department(name=name, description=desc, icon=icon)
                 db.add(d)
@@ -56,14 +54,22 @@ def seed():
 
         # ── Doctors ────────────────────────────────────────────────────────────
         doctors_data = [
-            ("Dr. Arjun Sharma",  "arjun@medicare.com",   "Cardiology",       "MD, DM Cardiology",    12, 1500.0),
-            ("Dr. Priya Nair",    "priya@medicare.com",   "Neurology",        "MD, DM Neurology",      8, 1200.0),
-            ("Dr. Ravi Kumar",    "ravi@medicare.com",    "Orthopedics",      "MS Orthopedics",        15, 1000.0),
-            ("Dr. Sunita Patel",  "sunita@medicare.com",  "Pediatrics",       "MD Pediatrics",         10,  800.0),
-            ("Dr. Anand Reddy",   "anand@medicare.com",   "General Medicine", "MBBS, MD",               6,  600.0),
-            ("Dr. Meena Iyer",    "meena@medicare.com",   "Gynecology",       "MS Gynecology",          9,  900.0),
-            ("Dr. Suresh Babu",   "suresh@medicare.com",  "Dermatology",      "MD Dermatology",         7,  700.0),
-            ("Dr. Kavitha Rao",   "kavitha@medicare.com", "Ophthalmology",    "MS Ophthalmology",      11,  850.0),
+            ("Dr. Arjun Sharma",  "arjun@medicare.com",
+             "Cardiology",       "MD, DM Cardiology",    12, 1500.0),
+            ("Dr. Priya Nair",    "priya@medicare.com",
+             "Neurology",        "MD, DM Neurology",      8, 1200.0),
+            ("Dr. Ravi Kumar",    "ravi@medicare.com",
+             "Orthopedics",      "MS Orthopedics",        15, 1000.0),
+            ("Dr. Sunita Patel",  "sunita@medicare.com",
+             "Pediatrics",       "MD Pediatrics",         10,  800.0),
+            ("Dr. Anand Reddy",   "anand@medicare.com",
+             "General Medicine", "MBBS, MD",               6,  600.0),
+            ("Dr. Meena Iyer",    "meena@medicare.com",
+             "Gynecology",       "MS Gynecology",          9,  900.0),
+            ("Dr. Suresh Babu",   "suresh@medicare.com",
+             "Dermatology",      "MD Dermatology",         7,  700.0),
+            ("Dr. Kavitha Rao",   "kavitha@medicare.com",
+             "Ophthalmology",    "MS Ophthalmology",      11,  850.0),
         ]
         for full_name, email, dept_name, qual, exp, fee in doctors_data:
             if not db.query(User).filter(User.email == email).first():
@@ -93,9 +99,12 @@ def seed():
 
         # ── Patients ───────────────────────────────────────────────────────────
         patients_data = [
-            ("patient@medicare.com", "John Patient",   "MALE",   35, "O+",  "+91 9876543210", "Chennai"),
-            ("jane@medicare.com",    "Jane Patient",   "FEMALE", 28, "A+",  "+91 9876543211", "Mumbai"),
-            ("ram@medicare.com",     "Ram Kumar",      "MALE",   45, "B+",  "+91 9876543212", "Delhi"),
+            ("patient@medicare.com", "John Patient",   "MALE",
+             35, "O+",  "+91 9876543210", "Chennai"),
+            ("jane@medicare.com",    "Jane Patient",
+             "FEMALE", 28, "A+",  "+91 9876543211", "Mumbai"),
+            ("ram@medicare.com",     "Ram Kumar",      "MALE",
+             45, "B+",  "+91 9876543212", "Delhi"),
         ]
         for email, name, gender, age, blood, phone, addr in patients_data:
             if not db.query(User).filter(User.email == email).first():
@@ -122,12 +131,13 @@ def seed():
         for ward_name, wtype, floor, total in wards_data:
             existing = db.query(Ward).filter(Ward.name == ward_name).first()
             if not existing:
-                ward = Ward(name=ward_name, ward_type=wtype, floor=floor, total_beds=total)
+                ward = Ward(name=ward_name, ward_type=wtype,
+                            floor=floor, total_beds=total)
                 db.add(ward)
                 db.flush()
                 for i in range(1, total + 1):
                     bed_num = f"{ward_name[:1]}{floor}-{i:02d}"
-                    status  = BedStatus.OCCUPIED if i <= total // 3 else BedStatus.AVAILABLE
+                    status = BedStatus.OCCUPIED if i <= total // 3 else BedStatus.AVAILABLE
                     db.add(HospitalBed(
                         ward_id=ward.id, bed_number=bed_num,
                         bed_type="ICU" if wtype == WardType.ICU else "STANDARD",
@@ -147,7 +157,8 @@ def seed():
     except Exception as e:
         db.rollback()
         print(f"❌ Error: {e}")
-        import traceback; traceback.print_exc()
+        import traceback
+        traceback.print_exc()
         raise
     finally:
         db.close()

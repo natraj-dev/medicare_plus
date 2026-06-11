@@ -1,10 +1,4 @@
-"""
-Module 25: Hospital Bed Management
-Module 26: Admission & Discharge
-Module 27: Emergency Requests
-Module 29: Patient Feedback
-Module 30: Advanced Analytics
-"""
+
 from datetime import datetime, timedelta
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
@@ -93,14 +87,15 @@ def bed_availability(db: Session = Depends(get_db)):
     wards = db.query(Ward).filter(Ward.is_active == True).all()
     result = []
     for w in wards:
-        total     = db.query(HospitalBed).filter(HospitalBed.ward_id == w.id).count()
+        total = db.query(HospitalBed).filter(
+            HospitalBed.ward_id == w.id).count()
         available = db.query(HospitalBed).filter(
             HospitalBed.ward_id == w.id,
-            HospitalBed.status  == BedStatus.AVAILABLE,
+            HospitalBed.status == BedStatus.AVAILABLE,
         ).count()
-        occupied  = db.query(HospitalBed).filter(
+        occupied = db.query(HospitalBed).filter(
             HospitalBed.ward_id == w.id,
-            HospitalBed.status  == BedStatus.OCCUPIED,
+            HospitalBed.status == BedStatus.OCCUPIED,
         ).count()
         result.append({
             "ward_id": w.id, "ward_name": w.name,
@@ -138,14 +133,17 @@ def admit_patient(
     db: Session = Depends(get_db),
 ):
     if current_user.role not in [UserRole.DOCTOR, UserRole.ADMIN]:
-        raise HTTPException(status_code=403, detail="Only doctors/admins can admit patients")
+        raise HTTPException(
+            status_code=403, detail="Only doctors/admins can admit patients")
 
     # Mark bed as occupied
     if data.bed_id:
-        bed = db.query(HospitalBed).filter(HospitalBed.id == data.bed_id).first()
+        bed = db.query(HospitalBed).filter(
+            HospitalBed.id == data.bed_id).first()
         if bed:
             if bed.status == BedStatus.OCCUPIED:
-                raise HTTPException(status_code=409, detail="Bed is already occupied")
+                raise HTTPException(
+                    status_code=409, detail="Bed is already occupied")
             bed.status = BedStatus.OCCUPIED
 
     admission = Admission(**data.dict())
@@ -179,7 +177,8 @@ def list_admissions(
 ):
     q = db.query(Admission)
     if current_user.role == UserRole.PATIENT:
-        patient = db.query(Patient).filter(Patient.user_id == current_user.id).first()
+        patient = db.query(Patient).filter(
+            Patient.user_id == current_user.id).first()
         if patient:
             q = q.filter(Admission.patient_id == patient.id)
     elif patient_id:
@@ -209,7 +208,8 @@ def discharge_patient(
     db: Session = Depends(get_db),
 ):
     if current_user.role not in [UserRole.DOCTOR, UserRole.ADMIN]:
-        raise HTTPException(status_code=403, detail="Only doctors/admins can discharge patients")
+        raise HTTPException(
+            status_code=403, detail="Only doctors/admins can discharge patients")
 
     a = db.query(Admission).filter(Admission.id == admission_id).first()
     if not a:
@@ -217,11 +217,11 @@ def discharge_patient(
     if a.status == AdmissionStatus.DISCHARGED:
         raise HTTPException(status_code=400, detail="Already discharged")
 
-    a.status            = AdmissionStatus.DISCHARGED
-    a.discharge_date    = datetime.utcnow()
-    a.discharge_notes   = data.discharge_notes
+    a.status = AdmissionStatus.DISCHARGED
+    a.discharge_date = datetime.utcnow()
+    a.discharge_notes = data.discharge_notes
     a.treatment_summary = data.treatment_summary
-    a.total_cost        = data.total_cost
+    a.total_cost = data.total_cost
 
     # Free the bed
     if a.bed_id:
@@ -247,7 +247,8 @@ def discharge_patient(
 
 
 # ── Module 27: Emergency Requests ─────────────────────────────────────────────
-emergency_req_router = APIRouter(prefix="/emergency-requests", tags=["Emergency Requests"])
+emergency_req_router = APIRouter(
+    prefix="/emergency-requests", tags=["Emergency Requests"])
 
 
 @emergency_req_router.post("", response_model=EmergencyRequestResponse)
@@ -271,7 +272,8 @@ def list_emergency_requests(
 ):
     q = db.query(EmergencyRequest)
     if current_user.role == UserRole.PATIENT:
-        patient = db.query(Patient).filter(Patient.user_id == current_user.id).first()
+        patient = db.query(Patient).filter(
+            Patient.user_id == current_user.id).first()
         if patient:
             q = q.filter(EmergencyRequest.patient_id == patient.id)
     if status:
@@ -287,7 +289,8 @@ def get_emergency_request(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    r = db.query(EmergencyRequest).filter(EmergencyRequest.id == request_id).first()
+    r = db.query(EmergencyRequest).filter(
+        EmergencyRequest.id == request_id).first()
     if not r:
         raise HTTPException(status_code=404, detail="Request not found")
     return r
@@ -300,7 +303,8 @@ def update_emergency_request(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    r = db.query(EmergencyRequest).filter(EmergencyRequest.id == request_id).first()
+    r = db.query(EmergencyRequest).filter(
+        EmergencyRequest.id == request_id).first()
     if not r:
         raise HTTPException(status_code=404, detail="Request not found")
     for field, value in data.dict(exclude_unset=True).items():
@@ -324,7 +328,8 @@ def submit_feedback(
 ):
     patient_id = None
     if current_user.role == UserRole.PATIENT:
-        patient = db.query(Patient).filter(Patient.user_id == current_user.id).first()
+        patient = db.query(Patient).filter(
+            Patient.user_id == current_user.id).first()
         if patient:
             patient_id = patient.id
 
@@ -343,7 +348,8 @@ def list_feedback(
 ):
     q = db.query(PatientFeedback)
     if current_user.role == UserRole.PATIENT:
-        patient = db.query(Patient).filter(Patient.user_id == current_user.id).first()
+        patient = db.query(Patient).filter(
+            Patient.user_id == current_user.id).first()
         if patient:
             q = q.filter(PatientFeedback.patient_id == patient.id)
     if category:
@@ -358,11 +364,12 @@ def respond_feedback(
     current_user: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ):
-    fb = db.query(PatientFeedback).filter(PatientFeedback.id == feedback_id).first()
+    fb = db.query(PatientFeedback).filter(
+        PatientFeedback.id == feedback_id).first()
     if not fb:
         raise HTTPException(status_code=404, detail="Feedback not found")
     fb.admin_response = data.response
-    fb.is_resolved    = True
+    fb.is_resolved = True
     db.commit()
     db.refresh(fb)
     return fb
@@ -373,9 +380,9 @@ def feedback_analytics(
     current_user: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ):
-    all_fb   = db.query(PatientFeedback).all()
-    total    = len(all_fb)
-    avg      = sum(f.rating for f in all_fb) / total if total else 0
+    all_fb = db.query(PatientFeedback).all()
+    total = len(all_fb)
+    avg = sum(f.rating for f in all_fb) / total if total else 0
     resolved = sum(1 for f in all_fb if f.is_resolved)
 
     by_category: dict = {}
@@ -384,7 +391,7 @@ def feedback_analytics(
         cat = str(f.category)
         by_category[cat] = by_category.get(cat, 0) + 1
         r = str(f.rating)
-        by_rating[r]     = by_rating.get(r, 0) + 1
+        by_rating[r] = by_rating.get(r, 0) + 1
 
     return FeedbackAnalytics(
         total_feedback=total,
@@ -397,7 +404,8 @@ def feedback_analytics(
 
 
 # ── Module 30: Advanced Analytics ─────────────────────────────────────────────
-advanced_analytics_router = APIRouter(prefix="/analytics", tags=["Advanced Analytics"])
+advanced_analytics_router = APIRouter(
+    prefix="/analytics", tags=["Advanced Analytics"])
 
 
 @advanced_analytics_router.get("/dashboard", response_model=AdvancedDashboardStats)
@@ -406,44 +414,53 @@ def advanced_dashboard(
     db: Session = Depends(get_db),
 ):
     from datetime import date as date_type
-    today      = date_type.today()
+    today = date_type.today()
     week_start = today - timedelta(days=today.weekday())
     month_start = today.replace(day=1)
 
     # Appointments
-    total_appts    = db.query(Appointment).count()
-    today_appts    = db.query(Appointment).filter(Appointment.appointment_date == today).count()
-    week_appts     = db.query(Appointment).filter(Appointment.appointment_date >= week_start).count()
-    pending_appts  = db.query(Appointment).filter(Appointment.status == "PENDING").count()
-    done_appts     = db.query(Appointment).filter(Appointment.status == "COMPLETED").count()
+    total_appts = db.query(Appointment).count()
+    today_appts = db.query(Appointment).filter(
+        Appointment.appointment_date == today).count()
+    week_appts = db.query(Appointment).filter(
+        Appointment.appointment_date >= week_start).count()
+    pending_appts = db.query(Appointment).filter(
+        Appointment.status == "PENDING").count()
+    done_appts = db.query(Appointment).filter(
+        Appointment.status == "COMPLETED").count()
 
     # Consultations
     total_consults = db.query(Consultation).count()
 
     # Admissions
-    total_adm   = db.query(Admission).count()
-    current_adm = db.query(Admission).filter(Admission.status == "ADMITTED").count()
+    total_adm = db.query(Admission).count()
+    current_adm = db.query(Admission).filter(
+        Admission.status == "ADMITTED").count()
 
     # Revenue
     total_rev = db.query(func.sum(Billing.paid_amount)).scalar() or 0
     month_rev = db.query(func.sum(Billing.paid_amount)).filter(
-        Billing.payment_date >= datetime.combine(month_start, __import__('datetime').time.min)
+        Billing.payment_date >= datetime.combine(
+            month_start, __import__('datetime').time.min)
     ).scalar() or 0
-    pending_pay = db.query(Billing).filter(Billing.payment_status == "PENDING").count()
+    pending_pay = db.query(Billing).filter(
+        Billing.payment_status == "PENDING").count()
 
     # Beds
     total_beds = db.query(HospitalBed).count()
-    occ_beds   = db.query(HospitalBed).filter(HospitalBed.status == BedStatus.OCCUPIED).count()
-    avail_beds = db.query(HospitalBed).filter(HospitalBed.status == BedStatus.AVAILABLE).count()
+    occ_beds = db.query(HospitalBed).filter(
+        HospitalBed.status == BedStatus.OCCUPIED).count()
+    avail_beds = db.query(HospitalBed).filter(
+        HospitalBed.status == BedStatus.AVAILABLE).count()
 
     # People
-    total_patients  = db.query(Patient).count()
-    total_docs      = db.query(Doctor).count()
-    verified_docs   = db.query(Doctor).filter(Doctor.is_verified == True).count()
+    total_patients = db.query(Patient).count()
+    total_docs = db.query(Doctor).count()
+    verified_docs = db.query(Doctor).filter(Doctor.is_verified == True).count()
 
     # Feedback
-    all_fb  = db.query(PatientFeedback).all()
-    avg_fb  = sum(f.rating for f in all_fb) / len(all_fb) if all_fb else 0
+    all_fb = db.query(PatientFeedback).all()
+    avg_fb = sum(f.rating for f in all_fb) / len(all_fb) if all_fb else 0
 
     # Emergency
     active_em = db.query(EmergencyRequest).filter(
@@ -487,7 +504,8 @@ def department_performance(
     for d in depts:
         docs = db.query(Doctor).filter(Doctor.department_id == d.id).all()
         doc_ids = [doc.id for doc in docs]
-        appts = db.query(Appointment).filter(Appointment.doctor_id.in_(doc_ids)).count() if doc_ids else 0
+        appts = db.query(Appointment).filter(
+            Appointment.doctor_id.in_(doc_ids)).count() if doc_ids else 0
         completed = db.query(Appointment).filter(
             Appointment.doctor_id.in_(doc_ids),
             Appointment.status == "COMPLETED"
@@ -516,12 +534,14 @@ def doctor_performance(
     doctors = db.query(Doctor).all()
     result = []
     for d in doctors:
-        appts     = db.query(Appointment).filter(Appointment.doctor_id == d.id).count()
+        appts = db.query(Appointment).filter(
+            Appointment.doctor_id == d.id).count()
         completed = db.query(Appointment).filter(
             Appointment.doctor_id == d.id, Appointment.status == "COMPLETED"
         ).count()
-        consults  = db.query(Consultation).filter(Consultation.doctor_id == d.id).count()
-        revenue   = db.query(func.sum(Billing.paid_amount)).join(
+        consults = db.query(Consultation).filter(
+            Consultation.doctor_id == d.id).count()
+        revenue = db.query(func.sum(Billing.paid_amount)).join(
             Appointment, Billing.appointment_id == Appointment.id
         ).filter(Appointment.doctor_id == d.id).scalar() or 0
 
@@ -551,11 +571,13 @@ def revenue_trend(
     for i in range(days - 1, -1, -1):
         d = today - timedelta(days=i)
         day_start = datetime.combine(d, __import__('datetime').time.min)
-        day_end   = datetime.combine(d, __import__('datetime').time.max)
+        day_end = datetime.combine(d, __import__('datetime').time.max)
         rev = db.query(func.sum(Billing.paid_amount)).filter(
             Billing.payment_date >= day_start,
             Billing.payment_date <= day_end,
         ).scalar() or 0
-        appts = db.query(Appointment).filter(Appointment.appointment_date == d).count()
-        result.append({"date": str(d), "revenue": round(float(rev), 2), "appointments": appts})
+        appts = db.query(Appointment).filter(
+            Appointment.appointment_date == d).count()
+        result.append({"date": str(d), "revenue": round(
+            float(rev), 2), "appointments": appts})
     return result

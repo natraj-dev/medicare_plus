@@ -1,14 +1,4 @@
-"""
-PDF download & report generation endpoints.
-Routes:
-  GET /reports/prescription/{id}/pdf
-  GET /reports/invoice/{id}/pdf
-  GET /reports/appointments/pdf
-  GET /reports/medical-summary/pdf
-  GET /reports/appointments        (JSON summary)
-  GET /reports/billing             (JSON summary)
-  GET /reports/doctors             (JSON summary)
-"""
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse, JSONResponse
 from sqlalchemy.orm import Session
@@ -49,7 +39,8 @@ def _pdf_response(data: bytes, filename: str) -> StreamingResponse:
 def _get_patient_for_user(db: Session, user: User) -> Patient:
     patient = db.query(Patient).filter(Patient.user_id == user.id).first()
     if not patient:
-        raise HTTPException(status_code=404, detail="Patient profile not found")
+        raise HTTPException(
+            status_code=404, detail="Patient profile not found")
     return patient
 
 
@@ -61,7 +52,8 @@ def download_prescription_pdf(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    rx = db.query(Prescription).filter(Prescription.id == prescription_id).first()
+    rx = db.query(Prescription).filter(
+        Prescription.id == prescription_id).first()
     if not rx:
         raise HTTPException(status_code=404, detail="Prescription not found")
 
@@ -72,7 +64,7 @@ def download_prescription_pdf(
             raise HTTPException(status_code=403, detail="Access denied")
 
     patient = db.query(Patient).filter(Patient.id == rx.patient_id).first()
-    doctor  = db.query(Doctor).filter(Doctor.id == rx.doctor_id).first()
+    doctor = db.query(Doctor).filter(Doctor.id == rx.doctor_id).first()
 
     pdf_bytes = generate_prescription_pdf(rx, patient, doctor)
     return _pdf_response(pdf_bytes, f"prescription_RX{prescription_id:05d}.pdf")
@@ -102,7 +94,7 @@ def download_invoice_pdf(
 def download_appointments_pdf(
     from_date: Optional[date] = None,
     to_date:   Optional[date] = None,
-    status:    Optional[str]  = None,
+    status:    Optional[str] = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -111,7 +103,8 @@ def download_appointments_pdf(
         patient = _get_patient_for_user(db, current_user)
         q = q.filter(Appointment.patient_id == patient.id)
     elif current_user.role == UserRole.DOCTOR:
-        doctor = db.query(Doctor).filter(Doctor.user_id == current_user.id).first()
+        doctor = db.query(Doctor).filter(
+            Doctor.user_id == current_user.id).first()
         if doctor:
             q = q.filter(Appointment.doctor_id == doctor.id)
     if from_date:
@@ -135,12 +128,16 @@ def download_medical_summary_pdf(
     db: Session = Depends(get_db),
 ):
     patient = _get_patient_for_user(db, current_user)
-    appointments  = db.query(Appointment).filter(Appointment.patient_id == patient.id).all()
-    records       = db.query(MedicalRecord).filter(MedicalRecord.patient_id == patient.id).all()
-    prescriptions = db.query(Prescription).filter(Prescription.patient_id == patient.id).all()
+    appointments = db.query(Appointment).filter(
+        Appointment.patient_id == patient.id).all()
+    records = db.query(MedicalRecord).filter(
+        MedicalRecord.patient_id == patient.id).all()
+    prescriptions = db.query(Prescription).filter(
+        Prescription.patient_id == patient.id).all()
 
-    pdf_bytes = generate_medical_summary_pdf(patient, appointments, records, prescriptions)
-    return _pdf_response(pdf_bytes, f"medical_summary_{patient.full_name.replace(' ','_')}.pdf")
+    pdf_bytes = generate_medical_summary_pdf(
+        patient, appointments, records, prescriptions)
+    return _pdf_response(pdf_bytes, f"medical_summary_{patient.full_name.replace(' ', '_')}.pdf")
 
 
 # ── JSON Report Summaries ──────────────────────────────────────────────────────
@@ -149,7 +146,7 @@ def download_medical_summary_pdf(
 def appointment_report_json(
     from_date: Optional[date] = None,
     to_date:   Optional[date] = None,
-    status:    Optional[str]  = None,
+    status:    Optional[str] = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -158,7 +155,8 @@ def appointment_report_json(
         patient = _get_patient_for_user(db, current_user)
         q = q.filter(Appointment.patient_id == patient.id)
     elif current_user.role == UserRole.DOCTOR:
-        doctor = db.query(Doctor).filter(Doctor.user_id == current_user.id).first()
+        doctor = db.query(Doctor).filter(
+            Doctor.user_id == current_user.id).first()
         if doctor:
             q = q.filter(Appointment.doctor_id == doctor.id)
     if from_date:
@@ -177,7 +175,7 @@ def appointment_report_json(
         s = str(a.status)
         t = str(a.appointment_type)
         by_status[s] = by_status.get(s, 0) + 1
-        by_type[t]   = by_type.get(t, 0) + 1
+        by_type[t] = by_type.get(t, 0) + 1
 
     return {
         "total": len(appts),
@@ -207,8 +205,8 @@ def billing_report_json(
         q = q.filter(Billing.patient_id == patient.id)
 
     bills = q.order_by(Billing.created_at.desc()).all()
-    total_billed    = sum(b.total_amount  for b in bills)
-    total_collected = sum(b.paid_amount   for b in bills)
+    total_billed = sum(b.total_amount for b in bills)
+    total_collected = sum(b.paid_amount for b in bills)
     by_status: dict = {}
     for b in bills:
         s = str(b.payment_status)
@@ -241,8 +239,9 @@ def doctors_report_json(
     doctors = db.query(Doctor).all()
     data = []
     for d in doctors:
-        appt_count = db.query(Appointment).filter(Appointment.doctor_id == d.id).count()
-        completed  = db.query(Appointment).filter(
+        appt_count = db.query(Appointment).filter(
+            Appointment.doctor_id == d.id).count()
+        completed = db.query(Appointment).filter(
             Appointment.doctor_id == d.id,
             Appointment.status == "COMPLETED",
         ).count()

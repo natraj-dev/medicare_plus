@@ -1,6 +1,4 @@
-"""
-Admin patient management + enhanced doctor management endpoints.
-"""
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -36,11 +34,13 @@ def admin_list_patients(
         q = q.filter(Patient.gender == gender)
 
     total = q.count()
-    patients = q.order_by(Patient.created_at.desc()).offset(skip).limit(limit).all()
+    patients = q.order_by(Patient.created_at.desc()
+                          ).offset(skip).limit(limit).all()
 
     result = []
     for p in patients:
-        appt_count = db.query(Appointment).filter(Appointment.patient_id == p.id).count()
+        appt_count = db.query(Appointment).filter(
+            Appointment.patient_id == p.id).count()
         result.append({
             "id": p.id, "user_id": p.user_id,
             "full_name": p.full_name,
@@ -67,14 +67,18 @@ def admin_patient_detail(
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
 
-    appointments  = db.query(Appointment).filter(Appointment.patient_id == patient_id).order_by(Appointment.appointment_date.desc()).limit(10).all()
-    prescriptions = db.query(Prescription).filter(Prescription.patient_id == patient_id).all()
-    lab_tests     = db.query(LabTest).filter(LabTest.patient_id == patient_id).all()
-    records       = db.query(MedicalRecord).filter(MedicalRecord.patient_id == patient_id).all()
-    bills         = db.query(Billing).filter(Billing.patient_id == patient_id).all()
+    appointments = db.query(Appointment).filter(Appointment.patient_id == patient_id).order_by(
+        Appointment.appointment_date.desc()).limit(10).all()
+    prescriptions = db.query(Prescription).filter(
+        Prescription.patient_id == patient_id).all()
+    lab_tests = db.query(LabTest).filter(
+        LabTest.patient_id == patient_id).all()
+    records = db.query(MedicalRecord).filter(
+        MedicalRecord.patient_id == patient_id).all()
+    bills = db.query(Billing).filter(Billing.patient_id == patient_id).all()
 
-    total_billed    = sum(b.total_amount for b in bills)
-    total_collected = sum(b.paid_amount  for b in bills)
+    total_billed = sum(b.total_amount for b in bills)
+    total_collected = sum(b.paid_amount for b in bills)
 
     return {
         "patient": {
@@ -121,12 +125,14 @@ def admin_list_doctors(
         q = q.filter(Doctor.is_verified == True)
 
     total = q.count()
-    doctors = q.order_by(Doctor.created_at.desc()).offset(skip).limit(limit).all()
+    doctors = q.order_by(Doctor.created_at.desc()).offset(
+        skip).limit(limit).all()
 
     result = []
     for d in doctors:
-        appt_count = db.query(Appointment).filter(Appointment.doctor_id == d.id).count()
-        revenue    = db.query(func.sum(Billing.paid_amount)).join(
+        appt_count = db.query(Appointment).filter(
+            Appointment.doctor_id == d.id).count()
+        revenue = db.query(func.sum(Billing.paid_amount)).join(
             Appointment, Billing.appointment_id == Appointment.id
         ).filter(Appointment.doctor_id == d.id).scalar() or 0
         result.append({
@@ -180,7 +186,8 @@ def department_stats(
     depts = db.query(Department).filter(Department.is_active == True).all()
     result = []
     for dept in depts:
-        doc_count  = db.query(Doctor).filter(Doctor.department_id == dept.id).count()
+        doc_count = db.query(Doctor).filter(
+            Doctor.department_id == dept.id).count()
         appt_count = db.query(Appointment).join(Doctor, Appointment.doctor_id == Doctor.id).filter(
             Doctor.department_id == dept.id
         ).count()
@@ -208,7 +215,8 @@ def admin_create_bill(
     import uuid
     from datetime import datetime as dt
     invoice_no = f"INV-{dt.utcnow().strftime('%Y%m%d')}-{str(uuid.uuid4())[:8].upper()}"
-    total = (consultation_fee + lab_fee + medication_fee + other_charges - discount) * (1 + tax / 100)
+    total = (consultation_fee + lab_fee + medication_fee +
+             other_charges - discount) * (1 + tax / 100)
 
     from app.models.all_models import Billing
     b = Billing(
